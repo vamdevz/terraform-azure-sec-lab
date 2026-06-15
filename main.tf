@@ -12,8 +12,6 @@ terraform {
     container_name       = "tfstate"
     key                  = "prod.terraform.tfstate"
     use_oidc             = true
-    
-    # CORRECTED TYPO HERE:
     use_azuread_auth     = true 
   }
 }
@@ -27,6 +25,7 @@ resource "azurerm_resource_group" "lab" {
   location = "East US"
 }
 
+# ENFORCE SECURE STORAGE SETTINGS
 resource "azurerm_storage_account" "lab_storage" {
   name                     = "stsecpracticesa2026"
   resource_group_name      = azurerm_resource_group.lab.name
@@ -34,23 +33,22 @@ resource "azurerm_storage_account" "lab_storage" {
   account_tier             = "Standard"
   account_replication_type = "LRS"
 
-  public_network_access_enabled = true   
-  https_traffic_only_enabled   = false  
+  public_network_access_enabled = false
+  https_traffic_only_enabled   = true
+  shared_access_key_enabled     = false  
 }
 
-# Data block to read the existing Key Vault
+# DYNAMIC SECRET MANAGEMENT DATA BLOCKS
 data "azurerm_key_vault" "vault" {
-  name                = "vamsrvault2026" # Must match your vault name
+  name                = "vamsrvault2026" 
   resource_group_name = "rg-terraform-state-mgmt"
 }
 
-# Data block to fetch the specific secret dynamically
 data "azurerm_key_vault_secret" "db_password" {
   name         = "db-admin-password"
   key_vault_id = data.azurerm_key_vault.vault.id
 }
 
-# Example resource utilizing the secret securely
 resource "azurerm_key_vault_secret" "example_logged_secret" {
   name         = "deployed-secret-reference"
   value        = data.azurerm_key_vault_secret.db_password.value
