@@ -1,4 +1,4 @@
-name: "Terraform Security Scan"
+name: "Terraform Security Scan & Deployment"
 
 on:
   push:
@@ -11,8 +11,8 @@ permissions:
   contents: read
 
 jobs:
-  checkov-scan:
-    name: "Run Checkov SAST & Azure Login"
+  terraform-pipeline:
+    name: "Terraform CI/CD"
     runs-on: ubuntu-latest
 
     steps:
@@ -37,13 +37,13 @@ jobs:
           output_format: cli
           soft_fail: true
 
-      # Step 4: Install the Terraform CLI on the runner
+      # Step 4: Install the Terraform CLI
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: "1.7.0"
 
-      # Step 5: Initialize Terraform using OIDC credentials for the backend
+      # Step 5: Initialize Terraform using OIDC credentials
       - name: Terraform Init
         run: terraform init
         env:
@@ -52,9 +52,19 @@ jobs:
           ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           ARM_USE_OIDC: "true"
 
-      # Step 6: Generate an execution plan
+      # Step 6: Generate an execution plan file
       - name: Terraform Plan
-        run: terraform plan
+        run: terraform plan -out=tfplan
+        env:
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          ARM_USE_OIDC: "true"
+
+      # Step 7: Apply the plan ONLY on a push/merge to the main branch
+      - name: Terraform Apply
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: terraform apply -auto-approve tfplan
         env:
           ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
           ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
