@@ -5,25 +5,19 @@ terraform {
       version = "~> 3.0"
     }
   }
+
+  # ADD THIS SECURE BACKEND BLOCK
+  backend "azurerm" {
+    resource_group_name  = "rg-terraform-state-mgmt"
+    storage_account_name = "sttfstatemanagement2026"
+    container_name       = "tfstate"
+    key                  = "prod.terraform.tfstate"
+    use_oidc             = true # Tells Terraform to use our GitHub OIDC trust!
+  }
 }
 
 provider "azurerm" {
   features {}
-}
-
-resource "azurerm_resource_group" "lab" {
-  name     = "rg-terraform-sec-lab"
-  location = "East US"
-}
-
-resource "azurerm_resource_group" "lab" {
-  name     = "rg-terraform-sec-lab"
-  location = "East US"
-}
-
-resource "azurerm_resource_group" "lab" {
-  name     = "rg-terraform-sec-lab"
-  location = "East US"
 }
 
 resource "azurerm_resource_group" "lab" {
@@ -38,15 +32,6 @@ resource "azurerm_storage_account" "lab_storage" {
   account_tier             = "Standard"
   account_replication_type = "LRS"
 
-  # FIXING THE CRITICAL FLAWS
-  public_network_access_enabled = false
-  https_traffic_only_enabled   = true
-  shared_access_key_enabled     = false  
-
-  # CHECOKV SUPPRESSIONS FOR LAB ENVIRONMENT
-  #checkov:skip=CKV2_AZURE_33:Private endpoint not required for public learning lab
-  #checkov:skip=CKV2_AZURE_41:SAS expiration policy not needed for lab demo
-  #checkov:skip=CKV2_AZURE_47:Anonymous access blocked via public_network_access_enabled
-  #checkov:skip=CKV2_AZURE_1:Using default Microsoft-managed keys instead of CMK for cost/simplicity
-  #checkov:skip=CKV2_AZURE_38:Soft-delete not required for lab demo
+  public_network_access_enabled = true   
+  https_traffic_only_enabled   = false  
 }
