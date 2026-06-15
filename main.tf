@@ -13,8 +13,8 @@ terraform {
     key                  = "prod.terraform.tfstate"
     use_oidc             = true
     
-    # CRITICAL FIX: Forces Terraform to use Entra ID RBAC instead of Access Keys
-    use_azureadm_auth    = true 
+    # CORRECTED TYPO HERE:
+    use_azuread_auth     = true 
   }
 }
 
