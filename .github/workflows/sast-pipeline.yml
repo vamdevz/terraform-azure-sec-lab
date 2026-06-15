@@ -1,0 +1,26 @@
+name: "Terraform Security Scan"
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  checkov-scan:
+    name: "Run Checkov SAST"
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Check out the repository code
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      # Step 2: Run Checkov Static Analysis
+      - name: Run Checkov
+        uses: bridgecrewio/checkov-action@master
+        with:
+          directory: .
+          framework: terraform
+          # soft_fail: false # If true, it won't break the build. For practice, keep it false so it blocks unsafe code!
+          output_format: cli
