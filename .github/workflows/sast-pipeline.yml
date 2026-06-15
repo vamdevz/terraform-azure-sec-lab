@@ -52,7 +52,7 @@ jobs:
           ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           ARM_USE_OIDC: "true"
 
-      # Step 6: Generate an execution plan file
+      # Step 6: Generate binary execution plan file
       - name: Terraform Plan
         run: terraform plan -out=tfplan
         env:
@@ -61,7 +61,30 @@ jobs:
           ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           ARM_USE_OIDC: "true"
 
-      # Step 7: Apply the plan ONLY on a push/merge to the main branch
+      # Step 7: Convert binary plan to plain-text JSON for OPA parsing
+      - name: Convert Plan to JSON
+        run: terraform show -json tfplan > tfplan.json
+
+      # Step 8: Install the Open Policy Agent (OPA) engine
+      - name: Setup OPA
+        uses: open-policy-agent/setup-opa@v2
+        with:
+          version: latest
+
+      # Step 9: Evaluate JSON plan against custom Rego policies
+      - name: Evaluate Custom Corporate OPA Policies
+        run: |
+          opa eval --data enforce-region.rego --input tfplan.json "data.terraform.analysis.allow" --format pretty > opa_result.txt
+          cat opa_result.txt
+          
+          # If OPA evaluation returns false, print errors and stop the build
+          if grep -q "false" opa_result.txt; then
+            echo "CRITICAL: OPA governance policy validation failed!"
+            opa eval --data enforce-region.rego --input tfplan.json "data.terraform.analysis.violations" --format pretty
+            exit 1
+          fi
+
+      # Step 10: Apply changes ONLY when code pushes or merges directly to main
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: terraform apply -auto-approve tfplan
