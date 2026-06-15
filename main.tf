@@ -21,6 +21,11 @@ resource "azurerm_resource_group" "lab" {
   location = "East US"
 }
 
+resource "azurerm_resource_group" "lab" {
+  name     = "rg-terraform-sec-lab"
+  location = "East US"
+}
+
 resource "azurerm_storage_account" "lab_storage" {
   name                     = "stsecpracticesa2026"
   resource_group_name      = azurerm_resource_group.lab.name
@@ -31,7 +36,9 @@ resource "azurerm_storage_account" "lab_storage" {
   # FIXING THE CRITICAL FLAWS
   public_network_access_enabled = false
   https_traffic_only_enabled   = true
-  shared_access_key_enabled     = false  # <-- ADD THIS TO FIX CKV2_AZURE_40
+  
+  # Fixed CKV2_AZURE_40 by isolating the argument cleanly
+  shared_access_key_enabled     = false  
 
   # CHECOKV SUPPRESSIONS FOR LAB ENVIRONMENT
   #checkov:skip=CKV2_AZURE_33:Private endpoint not required for public learning lab
