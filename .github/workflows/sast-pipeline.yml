@@ -6,7 +6,6 @@ on:
   pull_request:
     branches: [ "main" ]
 
-# CRITICAL FOR OIDC: Allows GitHub to request a JWT token from Azure Entra ID
 permissions:
   id-token: write
   contents: read
@@ -21,7 +20,7 @@ jobs:
       - name: Checkout Repo
         uses: actions/checkout@v4
 
-      # Step 2: Authenticate to Azure using OIDC (No secrets/passwords!)
+      # Step 2: Authenticate to Azure using OIDC
       - name: Az CLI Login via OIDC
         uses: azure/login@v2
         with:
@@ -29,7 +28,7 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      # Step 3: Run Checkov Static Analysis
+      # Step 3: Run Checkov Static Analysis (Soft Fail)
       - name: Run Checkov Action
         uses: bridgecrewio/checkov-action@master
         with:
@@ -37,3 +36,27 @@ jobs:
           framework: terraform
           output_format: cli
           soft_fail: true
+
+      # Step 4: Install the Terraform CLI on the runner
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.7.0"
+
+      # Step 5: Initialize Terraform using OIDC credentials for the backend
+      - name: Terraform Init
+        run: terraform init
+        env:
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          ARM_USE_OIDC: "true"
+
+      # Step 6: Generate an execution plan
+      - name: Terraform Plan
+        run: terraform plan
+        env:
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          ARM_USE_OIDC: "true"
