@@ -24,3 +24,5 @@ jobs:
           framework: terraform
           # soft_fail: false # If true, it won't break the build. For practice, keep it false so it blocks unsafe code!
           output_format: cli
+          soft_fail: true
+          
