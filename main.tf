@@ -16,18 +16,24 @@ resource "azurerm_resource_group" "lab" {
   location = "East US"
 }
 
+resource "azurerm_resource_group" "lab" {
+  name     = "rg-terraform-sec-lab"
+  location = "East US"
+}
+
 resource "azurerm_storage_account" "lab_storage" {
-  name                     = "stsecpracticesa2026" # Must be globally unique
+  name                     = "stsecpracticesa2026"
   resource_group_name      = azurerm_resource_group.lab.name
   location                 = azurerm_resource_group.lab.location
   account_tier             = "Standard"
   account_replication_type = "LRS"
 
-  # FIXES CRITICAL FLAWS:
-  public_network_access_enabled = false    # fixed security flagged by checkov
-  https_traffic_only_enabled   = true     # fixed security flagged by checkov
+  # FIXING THE CRITICAL FLAWS
+  public_network_access_enabled = false
+  https_traffic_only_enabled   = true
+  shared_access_key_enabled     = false  # <-- ADD THIS TO FIX CKV2_AZURE_40
 
-  # CHECOKV SUPPRESSIONS FOR LAB ENVIRONMENT:
+  # CHECOKV SUPPRESSIONS FOR LAB ENVIRONMENT
   #checkov:skip=CKV2_AZURE_33:Private endpoint not required for public learning lab
   #checkov:skip=CKV2_AZURE_41:SAS expiration policy not needed for lab demo
   #checkov:skip=CKV2_AZURE_47:Anonymous access blocked via public_network_access_enabled
