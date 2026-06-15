@@ -6,13 +6,15 @@ terraform {
     }
   }
 
-  # ADD THIS SECURE BACKEND BLOCK
   backend "azurerm" {
     resource_group_name  = "rg-terraform-state-mgmt"
     storage_account_name = "sttfstatemanagement2026"
     container_name       = "tfstate"
     key                  = "prod.terraform.tfstate"
-    use_oidc             = true # Tells Terraform to use our GitHub OIDC trust!
+    use_oidc             = true
+    
+    # CRITICAL FIX: Forces Terraform to use Entra ID RBAC instead of Access Keys
+    use_azureadm_auth    = true 
   }
 }
 
