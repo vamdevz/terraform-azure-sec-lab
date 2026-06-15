@@ -6,9 +6,14 @@ on:
   pull_request:
     branches: [ "main" ]
 
+# CRITICAL FOR OIDC: Allows GitHub to request a JWT token from Azure Entra ID
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   checkov-scan:
-    name: "Run Checkov SAST"
+    name: "Run Checkov SAST & Azure Login"
     runs-on: ubuntu-latest
 
     steps:
@@ -16,13 +21,19 @@ jobs:
       - name: Checkout Repo
         uses: actions/checkout@v4
 
-      # Step 2: Run Checkov Static Analysis
-      - name: Run Checkov
+      # Step 2: Authenticate to Azure using OIDC (No secrets/passwords!)
+      - name: Az CLI Login via OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      # Step 3: Run Checkov Static Analysis
+      - name: Run Checkov Action
         uses: bridgecrewio/checkov-action@master
         with:
           directory: .
           framework: terraform
-          # soft_fail: false # If true, it won't break the build. For practice, keep it false so it blocks unsafe code!
           output_format: cli
           soft_fail: true
-          
