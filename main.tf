@@ -24,6 +24,6 @@ resource "azurerm_storage_account" "lab_storage" {
   account_replication_type = "LRS"
 
   # SECURITY FLAWS FOR CHECKOV TO CATCH:
-  public_network_access_enabled = true   # Checkov will flag this as too open
-  https_traffic_only_enabled   = false  # Checkov will flag this (unencrypted traffic allowed)
+  public_network_access_enabled = false    #fixed security flagged by checkov
+  https_traffic_only_enabled   = true  #fixed security flagged by checkov
 }
