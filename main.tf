@@ -37,3 +37,27 @@ resource "azurerm_storage_account" "lab_storage" {
   public_network_access_enabled = true   
   https_traffic_only_enabled   = false  
 }
+
+# Data block to read the existing Key Vault
+data "azurerm_key_vault" "vault" {
+  name                = "vamsrvault2026" # Must match your vault name
+  resource_group_name = "rg-terraform-state-mgmt"
+}
+
+# Data block to fetch the specific secret dynamically
+data "azurerm_key_vault_secret" "db_password" {
+  name         = "db-admin-password"
+  key_vault_id = data.azurerm_key_vault.vault.id
+}
+
+# Example resource utilizing the secret securely
+resource "azurerm_key_vault_secret" "example_logged_secret" {
+  name         = "deployed-secret-reference"
+  value        = data.azurerm_key_vault_secret.db_password.value
+  key_vault_id = data.azurerm_key_vault.vault.id
+}
+
+output "database_password_status" {
+  value     = data.azurerm_key_vault_secret.db_password.value
+  sensitive = true 
+}
